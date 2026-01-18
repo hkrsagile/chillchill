@@ -3,110 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CORE HUB | 獎賞中心</title>
+    <title>CORE HUB | Gamified CRM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #F5F5F7; color: #1D1D1F; }
-        .apple-card { background: #FFFFFF; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
-        .gold-accent { color: #D4AF37; }
-        .btn-gold { background-color: #C3B091; color: white; border-radius: 12px; transition: 0.3s; }
-        .btn-gold:hover { background-color: #A8957A; }
+        [x-cloak] { display: none !important; }
+        body { font-family: 'Inter', sans-serif; background-color: #F5F5F7; color: #1D1D1F; overflow-x: hidden; }
+        .apple-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); border-radius: 22px; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .btn-gold { background: #D4AF37; color: white; }
+        .btn-earth { background: #C3B091; color: white; }
+        canvas { background: #fff; border-radius: 12px; touch-action: none; border: 1px solid #eee; }
+        .control-btn { background: #E5E5E7; width: 60px; height: 60px; border-radius: 15px; display: flex; items-center; justify-center; font-weight: bold; }
     </style>
 </head>
-<body x-data="app()">
+<body x-data="app()" class="antialiased min-h-screen">
 
-    <nav class="p-8 max-w-6xl mx-auto flex justify-between items-center">
-        <div class="text-xl font-semibold tracking-tight">CORE<span class="gold-accent">HUB</span></div>
-        <button @click="openAdmin()" class="text-[10px] opacity-20 hover:opacity-100 uppercase tracking-widest">Admin Access</button>
+    <nav class="max-w-6xl mx-auto p-6 flex justify-between items-center">
+        <div class="text-2xl font-semibold tracking-tighter cursor-pointer" @click="screen = 'menu'">CORE<span class="text-[#D4AF37]">.HUB</span></div>
+        <button @click="loginAdmin()" class="text-[10px] text-gray-400 uppercase tracking-widest hover:text-gray-900">Systems Access</button>
     </nav>
 
-    <main class="max-w-6xl mx-auto px-6 py-10">
-        <template x-if="view === 'lobby'">
-            <div class="text-center animate-fade-in">
-                <h1 class="text-4xl font-light mb-4">請選擇一項挑戰</h1>
-                <p class="text-gray-400 mb-12">完成遊戲即可獲得專屬禮遇</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto">
-                    <div @click="view = 'quiz'" class="apple-card p-12 cursor-pointer hover:scale-[1.02] transition-all">
-                        <div class="text-3xl mb-4">✨</div>
-                        <h3 class="text-xl font-medium">智能問答</h3>
-                        <p class="text-sm text-gray-400 mt-2">挑戰五行百科知識</p>
-                    </div>
-                    <div @click="alert('Snake 載入中...')" class="apple-card p-12 cursor-pointer hover:scale-[1.02] transition-all">
-                        <div class="text-3xl mb-4">🐍</div>
-                        <h3 class="text-xl font-medium">經典貪食蛇</h3>
-                        <p class="text-sm text-gray-400 mt-2">挑戰高分贏取獎賞</p>
-                    </div>
+    <main class="max-w-4xl mx-auto p-4">
+        
+        <div x-show="screen === 'menu'" class="space-y-12">
+            <div class="text-center py-10">
+                <h1 class="text-5xl font-bold tracking-tight mb-4 text-[#1D1D1F]">選擇你的挑戰</h1>
+                <p class="text-gray-400 text-lg">達到 50 分即可獲得專屬禮遇</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto">
+                <div class="apple-card p-8 text-center flex flex-col items-center shadow-sm">
+                    <div class="text-4xl mb-4">📝</div>
+                    <h3 class="text-xl font-bold mb-2">智能問答</h3>
+                    <p class="text-gray-400 text-sm mb-6">測試你的專業敏銳度</p>
+                    <button @click="startGame('quiz')" class="w-full py-3 rounded-xl font-semibold btn-earth">立即開始</button>
+                </div>
+                <div class="apple-card p-8 text-center flex flex-col items-center shadow-sm">
+                    <div class="text-4xl mb-4">🐍</div>
+                    <h3 class="text-xl font-bold mb-2">經典食蛇</h3>
+                    <p class="text-gray-400 text-sm mb-6">極致空間的操控感</p>
+                    <button @click="startGame('snake')" class="w-full py-3 rounded-xl font-semibold btn-gold">立即開始</button>
                 </div>
             </div>
-        </template>
+        </div>
 
-        <template x-if="view === 'claim'">
-            <div class="max-w-md mx-auto apple-card p-12 text-center">
-                <div class="text-5xl mb-6">🏆</div>
-                <h2 class="text-2xl font-bold mb-2">恭喜達成領獎資格</h2>
-                <p class="text-sm text-gray-500 mb-8 leading-relaxed">請填寫 Email，我們將於 <span class="font-bold text-black">2 個工作天內</span> 派發獎品。</p>
-                <input x-model="email" type="email" placeholder="您的電子郵件" class="w-full p-4 bg-stone-50 border-none rounded-xl mb-6 text-center outline-none">
-                <button @click="submitClaim()" class="w-full btn-gold py-4 font-medium shadow-md">確認提交</button>
+        <div x-show="screen === 'quiz'" x-cloak class="apple-card p-8 md:p-12 max-w-md mx-auto">
+            <div class="flex justify-between mb-8 text-xs text-gray-400 uppercase tracking-widest">
+                <span x-text="'Question ' + (currentQuizIdx + 1)"></span>
+                <span x-text="'Score: ' + score"></span>
             </div>
-        </template>
+            <h2 class="text-2xl font-bold mb-8" x-text="quizData[currentQuizIdx].q"></h2>
+            <div class="grid gap-4">
+                <template x-for="(opt, idx) in quizData[currentQuizIdx].options" :key="idx">
+                    <button @click="handleQuiz(idx)" class="w-full p-4 text-left border border-gray-100 rounded-2xl hover:bg-gray-50 hover:border-[#C3B091] transition-all" x-text="opt"></button>
+                </template>
+            </div>
+        </div>
 
-        <template x-if="view === 'admin'">
-            <div class="apple-card p-10 animate-fade-in">
-                <div class="flex justify-between items-center mb-8">
-                    <h2 class="text-xl font-bold">CRM 領獎清單</h2>
-                    <button @click="view = 'lobby'" class="text-xs underline opacity-40">返回首頁</button>
-                </div>
-                <div class="overflow-hidden">
-                    <table class="w-full text-left text-sm">
-                        <thead class="bg-gray-50 text-gray-400 uppercase text-[10px] tracking-widest">
-                            <tr>
-                                <th class="p-4">領獎用戶 Email</th>
-                                <th class="p-4">狀態</th>
-                                <th class="p-4">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <template x-for="(lead, index) in leads">
-                                <tr class="border-t border-gray-50">
-                                    <td class="p-4 font-medium" x-text="lead.email"></td>
-                                    <td class="p-4">
-                                        <span :class="lead.status === '已派發' ? 'text-green-500' : 'text-amber-500'" x-text="lead.status"></span>
-                                    </td>
-                                    <td class="p-4">
-                                        <button @click="toggleStatus(index)" class="text-xs underline">更改狀態</button>
-                                    </td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
+        <div x-show="screen === 'snake'" x-cloak class="apple-card p-6 flex flex-col items-center">
+            <div class="w-full flex justify-between mb-4 px-4">
+                <button @click="screen = 'menu'" class="text-sm text-gray-400">退出</button>
+                <div class="font-bold text-[#D4AF37]">Score: <span x-text="score"></span></div>
             </div>
-        </template>
+            <canvas id="snakeCanvas" width="300" height="300"></canvas>
+            
+            <div class="mt-8 grid grid-cols-3 gap-3 md:hidden">
+                <div class="col-start-2"><button @click="setDir(0,-1)" class="control-btn">↑</button></div>
+                <div class="col-start-1"><button @click="setDir(-1,0)" class="control-btn">←</button></div>
+                <div class="col-start-2"><button @click="setDir(0,1)" class="control-btn">↓</button></div>
+                <div class="col-start-3"><button @click="setDir(1,0)" class="control-btn">→</button></div>
+            </div>
+        </div>
+
+        <div x-show="screen === 'claim'" x-cloak class="max-w-md mx-auto apple-card p-10 text-center space-y-8">
+            <div class="text-6xl">🎁</div>
+            <h2 class="text-3xl font-bold">恭喜達標！</h2>
+            <p class="text-gray-500 text-sm">獎品將於 2 個工作天內發送到電子郵箱</p>
+            <input type="email" x-model="emailInput" placeholder="example@mail.com" class="w-full p-4 bg-[#F5F5F7] rounded-2xl outline-none border focus:border-[#C3B091]">
+            <button @click="submitClaim()" class="w-full btn-gold py-4 rounded-2xl font-bold">確認領取</button>
+        </div>
+
+        <div x-show="screen === 'admin'" x-cloak class="apple-card p-8">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-xl font-bold uppercase tracking-widest">CRM Admin</h2>
+                <button @click="screen = 'menu'" class="text-xs underline">Back</button>
+            </div>
+            <table class="w-full text-left text-sm">
+                <tr class="text-gray-400 border-b"><th class="py-4 font-normal">Email</th><th class="py-4 font-normal text-right">Action</th></tr>
+                <template x-for="(item, idx) in claims" :key="idx">
+                    <tr class="border-b">
+                        <td class="py-4 font-medium" x-text="item.email"></td>
+                        <td class="py-4 text-right"><button @click="removeClaim(idx)" class="text-red-400 text-xs">刪除</button></td>
+                    </tr>
+                </template>
+            </table>
+        </div>
+
     </main>
 
     <script>
         function app() {
             return {
-                view: 'lobby',
-                email: '',
-                leads: JSON.parse(localStorage.getItem('my_leads') || '[]'),
-                openAdmin() {
-                    let pass = prompt("請輸入後台密碼:");
-                    if(pass === 'admin2026') this.view = 'admin';
-                    else alert("密碼錯誤");
+                screen: 'menu',
+                score: 0,
+                currentQuizIdx: 0,
+                emailInput: '',
+                claims: JSON.parse(localStorage.getItem('my_crm_data') || '[]'),
+                quizData: [
+                    { q: "Apple 的極簡設計風格源自？", options: ["包浩斯 (Bauhaus)", "波普藝術", "超現實主義"], correct: 0 },
+                    { q: "本專案的五行『金』色調是？", options: ["亮藍色", "香檳金", "草綠色"], correct: 1 }
+                ],
+                startGame(type) {
+                    this.score = 0;
+                    this.currentQuizIdx = 0;
+                    this.screen = type;
+                    if(type === 'snake') this.$nextTick(() => this.initSnake());
+                },
+                handleQuiz(idx) {
+                    if(idx === this.quizData[this.currentQuizIdx].correct) {
+                        this.score += 25;
+                        if(this.currentQuizIdx < this.quizData.length - 1) {
+                            this.currentQuizIdx++;
+                        } else {
+                            this.checkWin();
+                        }
+                    } else {
+                        alert('答錯了，請再試試！');
+                    }
+                },
+                checkWin() {
+                    if(this.score >= 50) this.screen = 'claim';
+                    else { alert('分數不足，再接再厲！'); this.screen = 'menu'; }
                 },
                 submitClaim() {
-                    if(!this.email.includes('@')) return alert('請輸入有效電郵');
-                    this.leads.push({ email: this.email, status: '待處理' });
-                    localStorage.setItem('my_leads', JSON.stringify(this.leads));
-                    alert('提交成功！請等候派獎。');
-                    this.view = 'lobby';
+                    if(!this.emailInput.includes('@')) return alert('請輸入有效 Email');
+                    this.claims.push({ email: this.emailInput, date: new Date().toLocaleDateString() });
+                    localStorage.setItem('my_crm_data', JSON.stringify(this.claims));
+                    alert('提交成功！');
+                    this.screen = 'menu';
                 },
-                toggleStatus(index) {
-                    this.leads[index].status = this.leads[index].status === '待處理' ? '已派發' : '待處理';
-                    localStorage.setItem('my_leads', JSON.stringify(this.leads));
+                loginAdmin() {
+                    if(prompt('Password:') === 'admin2026') this.screen = 'admin';
+                },
+                removeClaim(idx) {
+                    this.claims.splice(idx, 1);
+                    localStorage.setItem('my_crm_data', JSON.stringify(this.claims));
+                },
+                // Snake Logic
+                snakeDir: {x: 1, y: 0},
+                setDir(x, y) { this.snakeDir = {x, y}; },
+                initSnake() {
+                    const canvas = document.getElementById('snakeCanvas');
+                    const ctx = canvas.getContext('2d');
+                    let snake = [{x: 10, y: 10}];
+                    let food = {x: 5, y: 5};
+                    this.snakeDir = {x: 1, y: 0};
+                    
+                    const gameLoop = setInterval(() => {
+                        if(this.screen !== 'snake') return clearInterval(gameLoop);
+                        
+                        const head = { x: snake[0].x + this.snakeDir.x, y: snake[0].y + this.snakeDir.y };
+                        
+                        // 碰撞檢查
+                        if(head.x < 0 || head.x >= 20 || head.y < 0 || head.y >= 20) {
+                            clearInterval(gameLoop);
+                            this.checkWin();
+                            return;
+                        }
+
+                        snake.unshift(head);
+                        if(head.x === food.x && head.y === food.y) {
+                            this.score += 10;
+                            food = { x: Math.floor(Math.random()*20), y: Math.floor(Math.random()*20) };
+                        } else {
+                            snake.pop();
+                        }
+
+                        // 繪圖
+                        ctx.clearRect(0,0,300,300);
+                        ctx.fillStyle = '#C3B091';
+                        snake.forEach(p => ctx.fillRect(p.x*15, p.y*15, 14, 14));
+                        ctx.fillStyle = '#D4AF37';
+                        ctx.fillRect(food.x*15, food.y*15, 14, 14);
+                    }, 150);
                 }
             }
         }
