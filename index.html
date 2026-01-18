@@ -1,13 +1,115 @@
-[
-  {
-    "html_code": "<!DOCTYPE html>\n<html lang=\"zh-Hant\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Gamified CRM | 簡約智控中心</title>\n    <script src=\"https://cdn.tailwindcss.com\"></script>\n    <script defer src=\"https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js\"></script>\n    <link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap\" rel=\"stylesheet\">\n    <style>\n        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; background-color: #F5F5F7; color: #1D1D1F; }\n        .apple-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); border-radius: 20px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05); }\n        .btn-earth { background-color: #C3B091; color: white; transition: all 0.3s ease; }\n        .btn-earth:hover { background-color: #B29F7F; transform: translateY(-1px); }\n        .gold-border { border: 2px solid #D4AF37; }\n        .text-gold { color: #D4AF37; }\n        canvas { background: #fff; border-radius: 12px; cursor: crosshair; }\n    </style>\n</head>\n<body x-data=\"crmHub()\" class=\"antialiased\">\n\n    <!-- Navigation -->\n    <nav class=\"p-6 flex justify-between items-center\">\n        <div class=\"text-xl font-semibold tracking-tight cursor-pointer\" @click=\"screen = 'menu'\">CORE <span class=\"text-gold\">HUB</span></div>\n        <button @click=\"tryAdminAccess()\" class=\"text-xs text-gray-400 hover:text-gray-600 uppercase tracking-widest\">Admin Access</button>\n    </nav>\n\n    <main class=\"max-w-4xl mx-auto p-4 md:p-8\">\n        \n        <!-- 1. Game Selection Menu -->\n        <template x-if=\"screen === 'menu'\">\n            <div class=\"space-y-8\">\n                <div class=\"text-center space-y-2\">\n                    <h1 class=\"text-4xl font-bold\">挑戰開始</h1>\n                    <p class=\"text-gray-500\">達到 50 分即可解鎖專屬獎勵</p>\n                </div>\n                <div class=\"grid grid-cols-1 md:grid-cols-3 gap-6\">\n                    <template x-for=\"(game, id) in cms.games\" :key=\"id\">\n                        <div class=\"apple-card p-8 flex flex-col items-center text-center space-y-4\"\n                             :class=\"!game.enabled && 'opacity-50 pointer-events-none'\">\n                            <div class=\"w-12 h-12 rounded-full bg-[#F5F5F7] flex items-center justify-center text-xl\" x-text=\"game.icon\"></div>\n                            <h3 class=\"text-xl font-semibold\" x-text=\"game.name\"></h3>\n                            <p class=\"text-sm text-gray-500\" x-text=\"game.desc\"></p>\n                            <button @click=\"startGame(id)\" class=\"btn-earth px-6 py-2 rounded-full w-full\" x-text=\"game.enabled ? '開始' : '維護中'\"></button>\n                        </div>\n                    </template>\n                </div>\n            </div>\n        </template>\n\n        <!-- 2. Game Screens -->\n        <template x-if=\"['quiz', 'snake', 'puzzle'].includes(screen)\">\n            <div class=\"apple-card p-8 text-center\">\n                <div class=\"flex justify-between items-center mb-6\">\n                    <button @click=\"screen = 'menu'\" class=\"text-gray-400\">← 返回</button>\n                    <div class=\"font-mono font-bold text-xl text-gold\">Score: <span x-text=\"score\"></span></div>\n                </div>\n                \n                <!-- Quiz UI -->\n                <div x-show=\"screen === 'quiz'\" class=\"space-y-6\">\n                    <h2 class=\"text-2xl font-bold\" x-text=\"cms.quiz[currentQuizIdx].q\"></h2>\n                    <div class=\"grid gap-3\">\n                        <template x-for=\"(opt, idx) in cms.quiz[currentQuizIdx].options\" :key=\"idx\">\n                            <button @click=\"answerQuiz(idx)\" class=\"p-4 border border-gray-100 rounded-xl hover:bg-gray-50\" x-text=\"opt\"></button>\n                        </template>\n                    </div>\n                </div>\n\n                <!-- Snake UI -->\n                <div x-show=\"screen === 'snake'\" class=\"flex flex-col items-center\">\n                    <canvas id=\"snakeCanvas\" width=\"300\" height=\"300\"></canvas>\n                    <p class=\"mt-4 text-xs text-gray-400\">使用方向鍵控制方向</p>\n                </div>\n\n                <!-- Puzzle UI -->\n                <div x-show=\"screen === 'puzzle'\" class=\"py-20\">\n                    <p class=\"mb-4\">點擊下方按鈕模擬完成拼圖（演示邏輯）</p>\n                    <button @click=\"score = 50; checkWin()\" class=\"btn-earth px-8 py-3 rounded-full\">模擬成功</button>\n                </div>\n            </div>\n        </template>\n\n        <!-- 3. Claim Prize Screen -->\n        <template x-if=\"screen === 'claim'\">\n            <div class=\"apple-card p-10 max-w-md mx-auto text-center space-y-6\">\n                <div class=\"text-gold text-5xl\">🏆</div>\n                <h2 class=\"text-2xl font-bold\">恭喜達標！</h2>\n                <p class=\"text-gray-500\">獎品將於 2 個工作天內發送到您的電子郵箱</p>\n                <input type=\"email\" x-model=\"claimEmail\" placeholder=\"您的 Email 地址\" \n                       class=\"w-full p-4 bg-gray-50 rounded-xl outline-none focus:ring-2 focus:ring-[#C3B091]\">\n                <button @click=\"submitClaim()\" class=\"w-full btn-earth py-4 rounded-xl font-bold\">確認領取</button>\n            </div>\n        </template>\n\n        <!-- 4. Admin Dashboard (Hidden) -->\n        <template x-if=\"screen === 'admin'\">\n            <div class=\"space-y-6\">\n                <div class=\"flex justify-between items-end\">\n                    <h1 class=\"text-3xl font-bold\">管理後台</h1>\n                    <button @click=\"screen = 'menu'\" class=\"text-sm underline\">登出</button>\n                </div>\n\n                <!-- CMS -->\n                <div class=\"apple-card p-6\">\n                    <h3 class=\"font-bold mb-4\">遊戲開關 (CMS)</h3>\n                    <div class=\"flex gap-4\">\n                        <template x-for=\"(game, id) in cms.games\">\n                            <label class=\"flex items-center gap-2 border p-3 rounded-lg\">\n                                <input type=\"checkbox\" x-model=\"game.enabled\">\n                                <span x-text=\"game.name\"></span>\n                            </label>\n                        </template>\n                    </div>\n                </div>\n\n                <!-- CRM -->\n                <div class=\"apple-card p-6\">\n                    <h3 class=\"font-bold mb-4\">領取請求 (CRM)</h3>\n                    <div class=\"overflow-x-auto\">\n                        <table class=\"w-full text-left\">\n                            <thead>\n                                <tr class=\"text-gray-400 text-sm\">\n                                    <th class=\"pb-4\">Email</th>\n                                    <th class=\"pb-4\">來源</th>\n                                    <th class=\"pb-4\">狀態</th>\n                                    <th class=\"pb-4\">操作</th>\n                                </tr>\n                            </thead>\n                            <tbody class=\"text-sm\">\n                                <template x-for=\"(req, idx) in claims\" :key=\"idx\">\n                                    <tr class=\"border-t\">\n                                        <td class=\"py-4\" x-text=\"req.email\"></td>\n                                        <td x-text=\"req.source\"></td>\n                                        <td>\n                                            <span x-text=\"req.status\" \n                                                  :class=\"req.status === 'Pending' ? 'text-orange-500' : 'text-green-600'\"></span>\n                                        </td>\n                                        <td>\n                                            <button @click=\"toggleStatus(idx)\" class=\"text-xs bg-gray-100 px-2 py-1 rounded\">切換狀態</button>\n                                        </td>\n                                    </tr>\n                                </template>\n                            </tbody>\n                        </table>\n                    </div>\n                </div>\n            </div>\n        </template>\n\n    </main>\n\n    <script>\n        function crmHub() {\n            return {\n                screen: 'menu',\n                score: 0,\n                currentQuizIdx: 0,\n                claimEmail: '',\n                claims: JSON.parse(localStorage.getItem('crm_claims') || '[]'),\n                cms: {\n                    games: {\n                        quiz: { name: '知識問答', desc: '考驗你的專業知覺', icon: '❓', enabled: true },\n                        snake: { name: '經典食蛇', desc: '指尖靈敏度挑戰', icon: '🐍', enabled: true },\n                        puzzle: { name: '數字拼圖', desc: '邏輯思維重組', icon: '🧩', enabled: true }\n                    },\n                    quiz: [\n                        { q: \"CRM 核心目標是什麼？\", options: [\"降低成本\", \"顧客關係優化\", \"增加員工負擔\"], correct: 1 },\n                        { q: \"哪種顏色代表奢華與金屬質感？\", options: [\"#F5F5F7\", \"#D4AF37\", \"#000000\"], correct: 1 }\n                    ]\n                },\n\n                startGame(id) {\n                    this.screen = id;\n                    this.score = 0;\n                    if (id === 'snake') this.$nextTick(() => this.initSnake());\n                    if (id === 'quiz') this.currentQuizIdx = 0;\n                },\n\n                answerQuiz(idx) {\n                    if (idx === this.cms.quiz[this.currentQuizIdx].correct) {\n                        this.score += 25;\n                        if (this.currentQuizIdx < this.cms.quiz.length - 1) {\n                            this.currentQuizIdx++;\n                        } else {\n                            this.checkWin();\n                        }\n                    } else {\n                        alert('再試一次！');\n                    }\n                },\n\n                checkWin() {\n                    if (this.score >= 50) {\n                        setTimeout(() => { this.screen = 'claim'; }, 500);\n                    } else {\n                        alert('得分不足 50，再接再厲！');\n                        this.screen = 'menu';\n                    }\n                },\n\n                submitClaim() {\n                    if (!this.claimEmail.includes('@')) return alert('請輸入有效 Email');\n                    const newClaim = { \n                        email: this.claimEmail, \n                        source: this.screen, \n                        status: 'Pending', \n                        date: new Date().toISOString() \n                    };\n                    this.saveData(newClaim);\n                    this.screen = 'menu';\n                    alert('申請已提交！');\n                },\n\n                saveData(data) {\n                    this.claims.push(data);\n                    localStorage.setItem('crm_claims', JSON.stringify(this.claims));\n                    // Future API Integration: fetch('YOUR_GAS_URL', { method: 'POST', body: JSON.stringify(data) })\n                },\n\n                tryAdminAccess() {\n                    const pw = prompt('Admin Password:');\n                    if (pw === 'admin2026') this.screen = 'admin';\n                },\n\n                toggleStatus(idx) {\n                    this.claims[idx].status = this.claims[idx].status === 'Pending' ? 'Sent' : 'Pending';\n                    localStorage.setItem('crm_claims', JSON.stringify(this.claims));\n                },\n\n                initSnake() {\n                    const canvas = document.getElementById('snakeCanvas');\n                    const ctx = canvas.getContext('2d');\n                    let snake = [{x: 10, y: 10}];\n                    let food = {x: 15, y: 15};\n                    let dx = 1, dy = 0;\n                    \n                    const gameLoop = setInterval(() => {\n                        if (this.screen !== 'snake') { clearInterval(gameLoop); return; }\n                        \n                        const head = {x: snake[0].x + dx, y: snake[0].y + dy};\n                        snake.unshift(head);\n                        \n                        if (head.x === food.x && head.y === food.y) {\n                            this.score += 10;\n                            food = {x: Math.floor(Math.random()*20), y: Math.floor(Math.random()*20)};\n                            if (this.score >= 50) { clearInterval(gameLoop); this.checkWin(); }\n                        } else {\n                            snake.pop();\n                        }\n\n                        // Collision & Bounds\n                        if (head.x < 0 || head.x >= 20 || head.y < 0 || head.y >= 20) {\n                            clearInterval(gameLoop); alert('遊戲結束'); this.screen = 'menu';\n                        }\n\n                        ctx.clearRect(0, 0, 300, 300);\n                        ctx.fillStyle = '#D4AF37';\n                        snake.forEach(p => ctx.fillRect(p.x*15, p.y*15, 14, 14));\n                        ctx.fillStyle = '#C3B091';\n                        ctx.fillRect(food.x*15, food.y*15, 14, 14);\n                    }, 150);\n\n                    window.onkeydown = (e) => {\n                        if (e.key === 'ArrowUp') { dx = 0; dy = -1; }\n                        if (e.key === 'ArrowDown') { dx = 0; dy = 1; }\n                        if (e.key === 'ArrowLeft') { dx = -1; dy = 0; }\n                        if (e.key === 'ArrowRight') { dx = 1; dy = 0; }\n                    };\n                }\n            }\n        }\n    </script>\n</body>\n</html>"
-  },
-  {
-    "Project_Management_Summary": {
-      "UI_UX": "Apple-style minimalist aesthetic with #F5F5F7 background and Inter font for premium feel.",
-      "Access_Control": "Hidden Admin entry with 'admin2026' password; includes CRM (Lead tracking) and CMS (Game toggles) features.",
-      "Fulfillment_Logic": "Manual fulfillment workflow via status toggles (Pending/Sent). Score threshold set to 50 for lead conversion.",
-      "Technical_Note": "Built with Alpine.js for lightweight reactivity and Tailwind CSS for rapid responsive layout. Snake game uses native Canvas API."
-    }
-  }
-]```]```]
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORE HUB | 獎賞中心</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #F5F5F7; color: #1D1D1F; }
+        .apple-card { background: #FFFFFF; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
+        .gold-accent { color: #D4AF37; }
+        .btn-gold { background-color: #C3B091; color: white; border-radius: 12px; transition: 0.3s; }
+        .btn-gold:hover { background-color: #A8957A; }
+    </style>
+</head>
+<body x-data="app()">
+
+    <nav class="p-8 max-w-6xl mx-auto flex justify-between items-center">
+        <div class="text-xl font-semibold tracking-tight">CORE<span class="gold-accent">HUB</span></div>
+        <button @click="openAdmin()" class="text-[10px] opacity-20 hover:opacity-100 uppercase tracking-widest">Admin Access</button>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-6 py-10">
+        <template x-if="view === 'lobby'">
+            <div class="text-center animate-fade-in">
+                <h1 class="text-4xl font-light mb-4">請選擇一項挑戰</h1>
+                <p class="text-gray-400 mb-12">完成遊戲即可獲得專屬禮遇</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto">
+                    <div @click="view = 'quiz'" class="apple-card p-12 cursor-pointer hover:scale-[1.02] transition-all">
+                        <div class="text-3xl mb-4">✨</div>
+                        <h3 class="text-xl font-medium">智能問答</h3>
+                        <p class="text-sm text-gray-400 mt-2">挑戰五行百科知識</p>
+                    </div>
+                    <div @click="alert('Snake 載入中...')" class="apple-card p-12 cursor-pointer hover:scale-[1.02] transition-all">
+                        <div class="text-3xl mb-4">🐍</div>
+                        <h3 class="text-xl font-medium">經典貪食蛇</h3>
+                        <p class="text-sm text-gray-400 mt-2">挑戰高分贏取獎賞</p>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <template x-if="view === 'claim'">
+            <div class="max-w-md mx-auto apple-card p-12 text-center">
+                <div class="text-5xl mb-6">🏆</div>
+                <h2 class="text-2xl font-bold mb-2">恭喜達成領獎資格</h2>
+                <p class="text-sm text-gray-500 mb-8 leading-relaxed">請填寫 Email，我們將於 <span class="font-bold text-black">2 個工作天內</span> 派發獎品。</p>
+                <input x-model="email" type="email" placeholder="您的電子郵件" class="w-full p-4 bg-stone-50 border-none rounded-xl mb-6 text-center outline-none">
+                <button @click="submitClaim()" class="w-full btn-gold py-4 font-medium shadow-md">確認提交</button>
+            </div>
+        </template>
+
+        <template x-if="view === 'admin'">
+            <div class="apple-card p-10 animate-fade-in">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-xl font-bold">CRM 領獎清單</h2>
+                    <button @click="view = 'lobby'" class="text-xs underline opacity-40">返回首頁</button>
+                </div>
+                <div class="overflow-hidden">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-gray-50 text-gray-400 uppercase text-[10px] tracking-widest">
+                            <tr>
+                                <th class="p-4">領獎用戶 Email</th>
+                                <th class="p-4">狀態</th>
+                                <th class="p-4">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="(lead, index) in leads">
+                                <tr class="border-t border-gray-50">
+                                    <td class="p-4 font-medium" x-text="lead.email"></td>
+                                    <td class="p-4">
+                                        <span :class="lead.status === '已派發' ? 'text-green-500' : 'text-amber-500'" x-text="lead.status"></span>
+                                    </td>
+                                    <td class="p-4">
+                                        <button @click="toggleStatus(index)" class="text-xs underline">更改狀態</button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </template>
+    </main>
+
+    <script>
+        function app() {
+            return {
+                view: 'lobby',
+                email: '',
+                leads: JSON.parse(localStorage.getItem('my_leads') || '[]'),
+                openAdmin() {
+                    let pass = prompt("請輸入後台密碼:");
+                    if(pass === 'admin2026') this.view = 'admin';
+                    else alert("密碼錯誤");
+                },
+                submitClaim() {
+                    if(!this.email.includes('@')) return alert('請輸入有效電郵');
+                    this.leads.push({ email: this.email, status: '待處理' });
+                    localStorage.setItem('my_leads', JSON.stringify(this.leads));
+                    alert('提交成功！請等候派獎。');
+                    this.view = 'lobby';
+                },
+                toggleStatus(index) {
+                    this.leads[index].status = this.leads[index].status === '待處理' ? '已派發' : '待處理';
+                    localStorage.setItem('my_leads', JSON.stringify(this.leads));
+                }
+            }
+        }
+    </script>
+</body>
+</html>
