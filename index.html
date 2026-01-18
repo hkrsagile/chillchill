@@ -3,47 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CORE HUB | 完美修復版</title>
+    <title>CORE HUB</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         [x-cloak] { display: none !important; }
-        body { font-family: 'Inter', sans-serif; background-color: #F5F5F7; color: #1D1D1F; touch-action: manipulation; }
-        .apple-card { background: white; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
-        .btn-gold { background: #D4AF37; color: white; }
-        canvas { background: #fff; border-radius: 12px; border: 1px solid #eee; }
-        .control-btn { background: #E5E5E7; width: 65px; height: 65px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 24px; -webkit-user-select: none; }
+        body { background-color: #F5F5F7; font-family: sans-serif; }
+        .apple-card { background: white; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .control-btn { background: #E5E5E7; width: 60px; height: 60px; border-radius: 15px; font-size: 24px; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
-<body x-data="app()" class="antialiased min-h-screen">
+<body x-data="app()">
 
-    <nav class="max-w-6xl mx-auto p-6 flex justify-between items-center">
-        <div class="text-2xl font-semibold tracking-tighter cursor-pointer" @click="screen = 'menu'">CORE<span class="text-[#D4AF37]">.HUB</span></div>
-        <button @click="loginAdmin()" class="text-[10px] text-gray-400 uppercase tracking-widest">Systems Access</button>
+    <nav class="p-6 flex justify-between items-center max-w-4xl mx-auto">
+        <div class="text-2xl font-bold tracking-tighter" @click="screen = 'menu'">CORE.HUB</div>
+        <button @click="loginAdmin()" class="text-[10px] text-gray-400 uppercase">Admin</button>
     </nav>
 
-    <main class="max-w-4xl mx-auto p-4">
+    <main class="max-w-xl mx-auto p-4">
         
         <div x-show="screen === 'menu'">
-            <div class="text-center py-10">
-                <h1 class="text-4xl font-bold mb-4">選擇挑戰</h1>
-                <p class="text-gray-400">達到 50 分即可獲獎</p>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto">
-                <div @click="startGame('quiz')" class="apple-card p-10 text-center cursor-pointer hover:bg-gray-50">
-                    <div class="text-4xl mb-4">📝</div>
-                    <h3 class="font-bold">智能問答</h3>
+            <h1 class="text-3xl font-bold text-center my-8">挑戰領取獎賞</h1>
+            <div class="grid gap-6">
+                <div @click="startGame('quiz')" class="apple-card p-8 text-center cursor-pointer hover:bg-gray-50">
+                    <span class="text-4xl">📝</span>
+                    <h2 class="text-xl font-bold mt-2">智能問答</h2>
                 </div>
-                <div @click="startGame('snake')" class="apple-card p-10 text-center cursor-pointer hover:bg-gray-50">
-                    <div class="text-4xl mb-4">🐍</div>
-                    <h3 class="font-bold">經典食蛇</h3>
+                <div @click="startGame('snake')" class="apple-card p-8 text-center cursor-pointer hover:bg-gray-50">
+                    <span class="text-4xl">🐍</span>
+                    <h2 class="text-xl font-bold mt-2">經典食蛇</h2>
                 </div>
             </div>
         </div>
 
         <div x-show="screen === 'snake'" x-cloak class="apple-card p-6 flex flex-col items-center">
-            <div class="w-full flex justify-between mb-4">
-                <button @click="screen = 'menu'" class="text-gray-400">← 返回</button>
-                <div class="font-bold text-[#D4AF37]">Score: <span x-text="score"></span></div>
+            <div class="flex justify-between w-full mb-4">
+                <button @click="screen = 'menu'">← 返回</button>
+                <div class="font-bold text-yellow-600">分數: <span x-text="score"></span></div>
             </div>
-            <canvas id="snakeCanvas" width="300" height="300"></canvas>
+            <canvas id="snakeCanvas" width="300" height="300" class="border bg-white"></canvas>
+            
+            <div class="mt-6 grid grid-cols-3 gap-2 md:hidden">
+                <div class="col-start-2"><button @click="changeDir(0,-1)" class="control-btn">↑</button></div>
+                <div class="col-start-1"><button @click="changeDir(-1,0)" class="control-btn">←</button></div>
+                <div class="col-start-2"><button @click="changeDir(0,1)" class="control-btn">↓</button></div>
+                <div class="col-start-3"><button @click="changeDir(1,0)" class="control-btn">→</button></div>
+            </div>
+        </div>
+
+        <div x-show="screen === 'quiz'" x-cloak class="apple-card p-8">
+            <h2 class="text-2xl font-bold mb-6 text-center" x-text="quizData[currentQuizIdx].q"></h2>
+            <div class="grid gap-4">
+                <template x-for="(opt, idx) in quizData[currentQuizIdx].options" :key="idx">
+                    <button @click="handleQuiz(idx)" class="w-full p-4 border rounded-xl hover:bg-gray-100" x-text="opt"></button>
+                </template>
+            </div>
+        </div>
+
+        <div x-show="screen === 'claim'" x-cloak class="apple-card p-10 text-center">
+            <h2 class="text-2xl font-bold mb-4">🏆 恭喜達標！</h2>
+            <p class="text-gray-500 mb-6 text-sm">請輸入電郵領取禮品</p>
+            <input type="email" x-model="emailInput" placeholder="your@email.com" class="w-full p-4 bg-gray-100 rounded-xl mb-4">
+            <button @click="submitClaim()" class="w-full bg-yellow-600 text-white py-4 rounded-xl font-bold">確認領取</button>
+        </div>
+
+        <div x-show="screen === 'admin'" x-cloak class="apple-card p-8">
+            <div class="flex justify-between mb-4 border-b pb-2">
+                <h2 class="font-bold">領獎清單</h2>
+                <button @click="screen = 'menu'" class="text-sm">關閉</button>
+            </div>
+            <div class="max-h-64 overflow-auto">
+                <template x-for="(item, idx) in claims">
+                    <div class="flex justify-between py-2 border-b text-sm">
+                        <span x-text="item.email"></span>
+                        <button @click="claims.splice(idx,1); localStorage.setItem('my_data', JSON.stringify(claims))" class="text-red-500">刪除</button>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        function app() {
+            return {
+                screen: 'menu', score: 0, currentQuizIdx: 0, emailInput: '',
+                claims: JSON.parse(localStorage.getItem('my_data') || '[]'),
+                dx: 1, dy: 0,
+                quizData: [
+                    { q: "Apple 設計由誰主導過？", options: ["Jony Ive", "Elon Musk"], correct: 0 },
+                    { q: "這是什麼系統？", options: ["CRM", "Game"], correct: 0 }
+                ],
+                startGame(type) {
+                    this.score = 0; this.currentQuizIdx = 0; this.screen = type;
+                    if(type === 'snake') {
+                        this.dx = 1; this.dy = 0;
+                        setTimeout(() => this.initSnake(), 200);
+                    }
+                },
+                changeDir(x, y) { this.dx = x; this.dy = y; },
+                handleQuiz(idx) {
+                    if(idx === this.quizData[this.currentQuizIdx].correct) {
+                        this.score += 25;
+                        if(this.currentQuizIdx < this.quizData.length - 1) this.currentQuizIdx++;
+                        else this.screen = 'claim';
+                    } else { alert('答錯了！'); }
+                },
+                submitClaim() {
+                    if(!this.emailInput.includes('@')) return alert('Email 無效');
+                    this.claims.push({ email: this.emailInput });
+                    localStorage.setItem('my_data', JSON.stringify(this.claims));
+                    alert('提交成功！');
+                    this.screen = 'menu';
+                },
+                loginAdmin() {
+                    let pw = prompt('密碼:');
+                    if(pw === 'admin2026') { this.screen = 'admin'; }
+                    else if(pw !== null) { alert('密碼錯誤！'); }
+                },
+                initSnake() {
+                    const canvas = document.getElementById('snakeCanvas');
+                    const ctx = canvas.getContext('2d');
+                    let snake = [{x: 10, y: 10}];
+                    let food = {x: 5, y: 5};
+                    
+                    window.onkeydown = (e) => {
+                        if(e.key === 'ArrowUp') this.changeDir(0, -1);
+                        if(e.key === 'ArrowDown') this.changeDir(0, 1);
+                        if(e.key === 'ArrowLeft') this.changeDir(-1, 0);
+                        if(e.key === 'ArrowRight') this.changeDir(1, 0);
+                    };
+
+                    const loop = setInterval(() => {
+                        if(this.screen !== 'snake') return clearInterval(loop);
+                        const head = { x: snake[0].x + this.dx, y: snake[0].y + this.dy };
+                        
+                        if(head.x < 0 || head.x >= 20 || head.y < 0 || head.y >= 20) {
+                            clearInterval(loop);
+                            if(this.score >= 50) this.screen = 'claim';
+                            else { alert('遊戲結束，分數: ' + this.score); this.screen = 'menu'; }
+                            return;
+                        }
+
+                        snake.unshift(head);
+                        if(head.x === food.x && head.y === food.y) {
+                            this.score += 10;
+                            food = { x: Math.floor(Math.random()*20), y: Math.floor(Math.random()*20) };
+                        } else { snake.pop(); }
+
+                        ctx.clearRect(0,0,300,300);
+                        ctx.fillStyle = '#C3B091';
+                        snake.forEach(p => ctx.fillRect(p.x*15, p.y*15, 14, 14));
+                        ctx.fillStyle = '#D4AF37';
+                        ctx.fillRect(food.x*15, food.y*15, 14, 14);
+                    }, 150);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
